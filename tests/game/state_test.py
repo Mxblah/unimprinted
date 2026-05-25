@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import pytest
 from unittest.mock import patch
@@ -37,8 +38,7 @@ class Test_GameState:
     ### __init__() tests ###
 
     def test_initializes_with_default_path(self, game_state):
-        # there has to be a better way to write this path
-        assert game_state.save_path == os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'saves')), "Default save path should be '<root dir>/saves'"
+        assert game_state.save_path == str((Path(__file__).parent.parent.parent / 'saves').absolute()), "Default save path should be '<root dir>/saves'"
 
     def test_creates_save_directory_if_not_exists(self, tmp_path):
         """Test that the save directory is created if it doesn't exist.

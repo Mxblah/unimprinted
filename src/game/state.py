@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import json
 import logging
 
@@ -9,7 +10,7 @@ class GameState:
     """
 
     def __init__(   self,
-                    path: str = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', 'saves'))
+                    path: str = str((Path(__file__).parent.parent.parent / 'saves').absolute())
                 ):
         """Initializes the game state, either by loading an existing save or by creating a new save.
 
