@@ -1,0 +1,20 @@
+{
+    "type": "crafting",
+    "id": "clone-bay-basic",
+    "display": {
+        "name": "Clone Bay (Basic)",
+        "description": "The smallest and least powerful of the facility's cloning bays. At least one of them still works."
+    },
+    "space": 1,
+    "power": {
+        "passive": 1,
+        "active": 1,
+        "per_thread": 1
+    },
+    "crafting": {
+        "type": "clone",
+        "available_classes": ["basic"],
+        "extra_recipes": null,
+        "max_threads": 1
+    }
+}

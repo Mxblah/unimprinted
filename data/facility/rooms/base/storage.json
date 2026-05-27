@@ -1,0 +1,12 @@
+{
+    "type": "base",
+    "id": "storage",
+    "display": {
+        "name": "Storage",
+        "description": "Core facility used to store materials. Cannot be deconstructed or offlined."
+    },
+    "space": 3,
+    "power": {
+        "passive": 1
+    }
+}

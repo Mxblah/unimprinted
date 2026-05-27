@@ -1,0 +1,12 @@
+{
+    "type": "base",
+    "id": "life-support",
+    "display": {
+        "name": "Life Support",
+        "description": "Core facility required to maintain livable conditions within the structure. Cannot be deconstructed or offlined."
+    },
+    "space": 0,
+    "power": {
+        "per_space": 0.2
+    }
+}

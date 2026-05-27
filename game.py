@@ -2,24 +2,7 @@ import logging
 import argparse
 import colorlog
 from src.game.state import GameState
-
-# Configure colored logging
-handler = colorlog.StreamHandler()
-handler.setFormatter(colorlog.ColoredFormatter(
-    '%(log_color)s%(levelname)-8s %(message)s%(reset)s',
-    log_colors={
-        'DEBUG': 'cyan',
-        'INFO': 'green',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'bold_red',
-    }
-))
-root_logger = colorlog.getLogger()
-root_logger.addHandler(handler)
-
-# Logger for the entrypoint
-log = logging.getLogger(__name__)
+from src.game.facility import Facility
 
 # Arg parsing
 parser = argparse.ArgumentParser()
@@ -32,8 +15,25 @@ parser.add_argument('-l', '--log-level', type=str, choices=['DEBUG', 'INFO', 'WA
 
 args = parser.parse_args()
 
-# Configure things based on args, such as logging
+# Configure colored logging
+handler = colorlog.StreamHandler()
+handler.setFormatter(colorlog.ColoredFormatter(
+    '%(log_color)s%(levelname)-8s %(message)s%(reset)s',
+    log_colors={
+        'TRACE': 'bold_black',
+        'DEBUG': 'cyan',
+        'INFO': 'green',
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'CRITICAL': 'bold_red',
+    }
+))
+root_logger = colorlog.getLogger()
+root_logger.addHandler(handler)
 root_logger.setLevel(getattr(logging, args.log_level))
+
+# Logger for the entrypoint
+log = logging.getLogger(__name__)
 
 # Initialize the state
 g = GameState()
@@ -47,4 +47,6 @@ if args.delete_all:
 # Load or create the save
 g.load_save(args.save)
 
-# todo: some sort of TUI or other interface
+# Instantiate the facility and start the game loop
+f = Facility(g)
+f.show_facility_menu()

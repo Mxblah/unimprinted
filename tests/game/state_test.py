@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch
 from src.game.state import GameState
 
+
 class Test_GameState:
     """Tests for the GameState class
     """

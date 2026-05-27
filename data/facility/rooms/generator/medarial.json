@@ -1,0 +1,23 @@
+{
+    "type": "generator",
+    "id": "medarial",
+    "display": {
+        "name": "Fueled Generator (Medarial)",
+        "description": "A liquid-fueled generator that runs on medarial fuel. Limited capacity, but easily managed."
+    },
+    "power": {
+        "passive": 0
+    },
+    "space": 1,
+    "generator": {
+        "type": "fueled",
+        "consumes": {
+            "id": "fuel-medarial",
+            "max_amount": 4
+        },
+        "generates": {
+            "base": 0,
+            "per_fuel": 2
+        }
+    }
+}

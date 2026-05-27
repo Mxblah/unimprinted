@@ -1,0 +1,12 @@
+{
+    "type": "base",
+    "id": "overseer-core",
+    "display": {
+        "name": "Overseer Core",
+        "description": "Core facility containing the overseer's primary compute cluster. Cannot be deconstructed or offlined."
+    },
+    "space": 1,
+    "power": {
+        "passive": 1
+    }
+}

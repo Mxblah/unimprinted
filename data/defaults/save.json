@@ -1,0 +1,9 @@
+{
+    "id": null,
+    "config": {
+        "_comment_": "Dict of program-level configuration"
+    },
+    "options": {
+        "_comment_": "Dict of game-level configuration"
+    }
+}

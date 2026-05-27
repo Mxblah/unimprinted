@@ -2,25 +2,32 @@ import os
 from pathlib import Path
 import json
 import logging
+import time
+import uuid
 
 log = logging.getLogger(__name__)
+
 
 class GameState:
     """Class to manage game state, data, saving, loading, and similar operations.
     """
 
-    def __init__(   self,
-                    path: str = str((Path(__file__).parent.parent.parent / 'saves').absolute())
-                ):
+    def __init__(self,
+                 path: str = str((Path(__file__).parent.parent.parent / 'saves').absolute()),
+                 data_path: str = str((Path(__file__).parent.parent.parent / 'data').absolute())):
         """Initializes the game state, either by loading an existing save or by creating a new save.
 
         Args:
             path (str): Root path for save files. If not provided, defaults to "saves" folder in the project directory.
+            data_path (str): Path to the default save data file.
         """
         log.info(f"Initializing GameState with path: {path}")
 
         self.save_path = path
+        self.data_path = data_path
         log.debug(f"Save path set to: {self.save_path}")
+        log.debug(f"Data path set to: {self.data_path}")
+        self.load_data()
 
         # Ensure the directory exists
         if not os.path.exists(self.save_path):
@@ -36,11 +43,11 @@ class GameState:
 
         if autosave or (save == 0):
             # Don't need to update the ID for an autosave
-            log.info("Autosaving...")
+            log.info("📝 Autosaving...")
         else:
             # Update the ID to match the targeted slot
             self.state['id'] = save
-            log.info(f"Saving game to slot: {save}")
+            log.info(f"📝 Saving game to slot: {save}")
 
         save_file = os.path.join(self.save_path, f'{save if save != 0 else "auto"}.save')
         with open(save_file, 'w') as f:
@@ -70,14 +77,20 @@ class GameState:
             else:
                 log.info(f"Successfully loaded save from slot {save} with ID {self.state['id']}.")
         else:
+            log.debug(f"No save file found at slot {save}. Creating new save...")
             if (save == 0):
                 # We have to get a new slot, since we can't create an autosave without an existing save slot
                 save = self.get_empty_save_slot()
 
             # Create a new save file with default data
-            self.state: dict = {
-                'id': save
-            }
+            try:
+                with open(os.path.join(self.data_path, 'defaults', 'save.json'), 'r') as f:
+                    self.state = json.load(f)
+                    self.state['id'] = save
+                    self.state['uuid'] = str(uuid.uuid4())
+            except FileNotFoundError:
+                log.error("Default save data not found. Cannot create new save. (Has the data directory been deleted?)")
+                raise
             self.save_game(save)
             log.info(f"Created new save at slot {save}.")
 
@@ -124,3 +137,41 @@ class GameState:
         log.debug(f"Found empty save slot: {save_slot}")
 
         return save_slot
+
+    def load_data(self):
+        """Loads game data from the data directory. This is not the state data, but rather defaults, definitions, and other required information.
+        """
+
+        log.info("📚 Loading game data...")
+        self.data = {}
+        start_time = time.time()
+
+        # Walk all data files and load each one into self.data based on their path/filename
+        for root, dirs, files in os.walk(self.data_path):
+            for filename in files:
+                if filename.endswith('.json'):
+                    file_path = os.path.join(root, filename)
+                    relative_path = os.path.relpath(file_path, self.data_path)
+                    path_parts = os.path.splitext(relative_path)[0].split(os.sep)
+
+                    try:
+                        with open(file_path, 'r') as f:
+                            data = json.load(f)
+
+                        # Navigate/create nested dictionaries
+                        current = self.data
+                        for part in path_parts[:-1]:
+                            # log.debug(f"Creating nested dictionary for part: {part}")
+                            current = current.setdefault(part, {})
+
+                        # Store data at the final key
+                        current[path_parts[-1]] = data
+                        # log.debug(f"Loaded data file: {'/'.join(path_parts)}")
+                    except Exception as e:
+                        log.error(f"Failed to load data file {'/'.join(path_parts)}: {e}")
+
+        # This can take a while, so the diagnostics are welcome
+        end_time = time.time()
+        log.info(f"📚 Finished loading game data in {end_time - start_time:.2f} seconds.")
+
+        # print(json.dumps(self.data, indent=2))  # debug test

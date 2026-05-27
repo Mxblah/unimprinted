@@ -1,0 +1,37 @@
+{
+    "day": 0,
+    "space": {
+        "available": 0,
+        "total": 10
+    },
+    "power": {
+        "available": 0,
+        "locked": 0,
+        "total": 0
+    },
+    "rooms": [
+        {
+            "type": "base",
+            "id": "overseer-core"
+        },
+        {
+            "type": "base",
+            "id": "life-support"
+        },
+        {
+            "type": "base",
+            "id": "storage"
+        },
+        {
+            "type": "generator",
+            "id": "medarial"
+        },
+        {
+            "type": "crafting",
+            "id": "clone-bay-basic"
+        }
+    ],
+    "storage": {
+        "fuel-medarial": 30
+    }
+}
