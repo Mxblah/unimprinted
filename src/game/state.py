@@ -43,11 +43,11 @@ class GameState:
 
         if autosave or (save == 0):
             # Don't need to update the ID for an autosave
-            log.info("📝 Autosaving...")
+            log.info("Autosaving...")
         else:
             # Update the ID to match the targeted slot
             self.state['id'] = save
-            log.info(f"📝 Saving game to slot: {save}")
+            log.info(f"Saving game to slot: {save}")
 
         save_file = os.path.join(self.save_path, f'{save if save != 0 else "auto"}.save')
         with open(save_file, 'w') as f:
@@ -142,7 +142,7 @@ class GameState:
         """Loads game data from the data directory. This is not the state data, but rather defaults, definitions, and other required information.
         """
 
-        log.info("📚 Loading game data...")
+        log.info("Loading game data...")
         self.data = {}
         start_time = time.time()
 
@@ -172,6 +172,6 @@ class GameState:
 
         # This can take a while, so the diagnostics are welcome
         end_time = time.time()
-        log.info(f"📚 Finished loading game data in {end_time - start_time:.2f} seconds.")
+        log.info(f"Finished loading game data in {end_time - start_time:.2f} seconds.")
 
         # print(json.dumps(self.data, indent=2))  # debug test

@@ -5,24 +5,46 @@
 #    pip-compile --output-file='.\requirements.txt' --strip-extras '.\requirements.in'
 #
 colorama==0.4.6
-    # via
-    #   colorlog
-    #   pytest
-colorlog==6.10.1
-    # via -r requirements.in
-coverage==7.14.0
+    # via pytest
+coverage==7.14.1
     # via pytest-cov
 iniconfig==2.3.0
     # via pytest
+linkify-it-py==2.1.0
+    # via markdown-it-py
+markdown-it-py==4.2.0
+    # via
+    #   mdit-py-plugins
+    #   rich
+    #   textual
+mdit-py-plugins==0.6.1
+    # via textual
+mdurl==0.1.2
+    # via markdown-it-py
 packaging==26.2
     # via pytest
+platformdirs==4.10.0
+    # via textual
 pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
 pygments==2.20.0
-    # via pytest
+    # via
+    #   pytest
+    #   rich
+    #   textual
 pytest==9.0.3
-    # via pytest-cov
+    # via
+    #   -r requirements.in
+    #   pytest-cov
 pytest-cov==7.1.0
     # via -r requirements.in
+rich==15.0.0
+    # via textual
+textual==8.2.7
+    # via -r requirements.in
+typing-extensions==4.15.0
+    # via textual
+uc-micro-py==2.0.0
+    # via linkify-it-py

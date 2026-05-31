@@ -12,23 +12,28 @@
     "rooms": [
         {
             "type": "base",
-            "id": "overseer-core"
+            "id": "overseer-core",
+            "online": true
         },
         {
             "type": "base",
-            "id": "life-support"
+            "id": "life-support",
+            "online": true
         },
         {
             "type": "base",
-            "id": "storage"
+            "id": "storage",
+            "online": true
         },
         {
             "type": "generator",
-            "id": "medarial"
+            "id": "medarial",
+            "online": true
         },
         {
             "type": "crafting",
-            "id": "clone-bay-basic"
+            "id": "clone-bay-basic",
+            "online": true
         }
     ],
     "storage": {

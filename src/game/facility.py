@@ -32,20 +32,13 @@ class Facility:
 
         # Autosave after finishing so we don't have to do the setup again during a reload.
         self.g.save_game(autosave=True)
-        log.info(f'🌅 Starting day {self.state['facility']['day']}...')
-
-    def show_facility_menu(self):
-        """Presents the main game interface where the player can perform facility-related tasks. This is the main game loop.
-        """
-
-        pass
-        # todo: this is where the TUI goes. workin' on it.
+        log.info(f'Starting day {self.state['facility']['day']}...')
 
     def end_day(self):
 
         # Autosave before starting in case we get interrupted (i.e. in the summary), so the player doesn't lose the whole day.
         self.g.save_game(autosave=True)
-        log.info(f'🌇 Ending day {self.state['facility']['day']}...')
+        log.info(f'Ending day {self.state['facility']['day']}...')
 
         # Perform end-day steps such as displaying a summary and incrementing the day
         self.show_day_summary()

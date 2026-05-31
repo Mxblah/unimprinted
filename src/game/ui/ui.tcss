@@ -1,0 +1,24 @@
+Screen {
+    layout: vertical;
+}
+
+#main_container {
+    height: 1fr;
+}
+
+#rooms_list {
+    width: 40%;
+    border: solid $accent;
+    overflow: auto;
+}
+
+#room_detail {
+    width: 60%;
+    border: solid $accent;
+    overflow: auto;
+}
+
+#power_display {
+    height: auto;
+    border: solid $accent;
+}
