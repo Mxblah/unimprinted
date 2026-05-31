@@ -106,6 +106,23 @@ class RoomsList(Static):
             return rooms[self.selected_index]
         return None
 
+    def select_room(self, index: int, room_detail: RoomDetail) -> None:
+        """Selects a specific room via an index"""
+
+        max_idx = len(self.state['facility']['rooms']) - 1
+        if index > max_idx:
+            self.selected_index = 0  # wraparound to the start
+        elif index < 0:
+            self.selected_index = max_idx  # wraparound to the end
+        else:
+            self.selected_index = index  # valid, inside the list bounds
+
+        # Update detail pane and list
+        selected = self.get_selected_room()
+        if selected and room_detail:
+            room_detail.update_room(selected)
+        self.update(self.render())
+
 
 class RoomDetail(Static):
     """Widget to display detailed information about selected room."""
@@ -249,39 +266,11 @@ class GameUI(App):
 
     def action_select_room_up(self) -> None:
         """Move selection up in the rooms list."""
-        if self.rooms_list:
-            self.rooms_list.selected_index = max(
-                0,
-                self.rooms_list.selected_index - 1,
-            )
-            # TODO: allow for wraparound
-            # TODO: combine / make a helper for the common code between moving up and down
-
-            # Update detail pane
-            selected = self.rooms_list.get_selected_room()
-            if selected and self.room_detail:
-                self.room_detail.update_room(selected)
-
-            # Update displays
-            self.rooms_list.update(self.rooms_list.render())
+        self.rooms_list.select_room(self.rooms_list.selected_index - 1, self.room_detail)
 
     def action_select_room_down(self) -> None:
         """Move selection down in the rooms list."""
-        if self.rooms_list:
-            max_idx = len(self.state['facility']['rooms']) - 1
-            self.rooms_list.selected_index = min(
-                max_idx,
-                self.rooms_list.selected_index + 1,
-            )
-            # TODO: allow for wraparound
-
-            # Update detail pane
-            selected = self.rooms_list.get_selected_room()
-            if selected and self.room_detail:
-                self.room_detail.update_room(selected)
-
-            # Update displays
-            self.rooms_list.update(self.rooms_list.render())
+        self.rooms_list.select_room(self.rooms_list.selected_index + 1, self.room_detail)
 
     def action_toggle_room(self) -> None:
         """Toggle selected room online/offline."""
