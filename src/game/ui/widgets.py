@@ -1,7 +1,7 @@
 import logging
-import re
 from typing import Optional
 from textual import events
+from textual.validation import Integer
 from textual.widgets import Static, ListView, ListItem, Label, Input
 from src.game.state import GameState
 from src.game.helpers.rooms import RoomManager
@@ -137,14 +137,27 @@ class RoomDetail(Static):
         self.fuel_input: Optional[Input] = None
 
     def compose(self):
-        self.detail_body = Static("(Select a room for additional details)", id="room_detail_body")
+        # All rooms show the detail body
+        self.detail_body = Static(self._format_room_text(), id="room_detail_body")
         yield self.detail_body
-        self.fuel_input = Input(
-            placeholder="Fuel only available on generators",
-            id="fuel_input",
-            disabled=True,
-        )
-        yield self.fuel_input
+
+        # If we're a generator, show the fuel input field
+        if self.selected_room and self.selected_room['type'] == 'generator':
+            room_generator = RoomManager.get_room_data(self.selected_room, self.data, 'generator')
+            max_fuel = room_generator['consumes']['max_amount']
+            current_fuel = self.selected_room.get('fuel_amount', 0)
+
+            # todo: this field is kinda ugly; see about prettying it up with CSS or something
+            self.fuel_input = Input(
+                placeholder=f"(0..{max_fuel})",
+                id="fuel_input",
+                disabled=False,
+                value=str(current_fuel),
+                validators=[
+                    Integer(minimum=0, maximum=max_fuel)
+                ]
+            )
+            yield self.fuel_input
 
     def _format_room_text(self) -> str:
         """Provide the formatted text to display for the currently selected room."""
@@ -215,34 +228,6 @@ class RoomDetail(Static):
 
         return output
 
-    def _sync_room_display(self, focus_input: bool = False) -> None:
-        if self.detail_body is not None:
-            self.detail_body.update(self._format_room_text())
-
-        # Nothing more to do if we have no other sub-widgets
-        if self.fuel_input is None:
-            return
-
-        # todo: can we just get rid of it instead of disabling when not a generator?
-        if not self.selected_room or self.selected_room['type'] != 'generator':
-            self.fuel_input.disabled = True
-            self.fuel_input.placeholder = "Fuel only available on generators"
-            self.fuel_input.value = ""
-            return
-
-        # Handle fuel input by setting the current amount to whatever the input field is
-        room_generator = RoomManager.get_room_data(self.selected_room, self.data, 'generator')
-        max_fuel = room_generator['consumes']['max_amount']
-        current_fuel = self.selected_room.get('fuel_amount', 0)
-        self.fuel_input.disabled = False
-        self.fuel_input.placeholder = f"(0..{max_fuel})"
-        if self.fuel_input.value != str(current_fuel):
-            self.fuel_input.value = str(current_fuel)
-
-        # Focus the fuel input if requested
-        if focus_input and self.app is not None:
-            self.app.set_focus(self.fuel_input)
-
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input is not self.fuel_input:
             return  # not our input, ignore
@@ -252,16 +237,19 @@ class RoomDetail(Static):
         raw_value = event.value.strip()
         if raw_value == "":
             return  # it's empty, ignore
-        # todo: change this to a validator when the input is constructed instead?
-        if not re.fullmatch(r'-?\d+', raw_value):
-            # Input field is not a valid integer, so reset it to the current fuel amount
-            self.fuel_input.value = str(self.selected_room.get('fuel_amount', 0))
-            return
+        if event.validation_result and not event.validation_result.is_valid:
+            if self.fuel_input is not None:
+                # Input field is not a valid integer, so reset it to the current fuel amount
+                self.fuel_input.value = str(self.selected_room.get('fuel_amount', 0))
+                return
 
         # Hooray, it's a valid integer! Set the fuel amount to it.
         requested_amount = int(raw_value)
         requested_amount = max(0, requested_amount)
         self.set_fuel_amount(requested_amount)
+        if self.fuel_input is not None:
+            # Update input field to the clamped/validated value (clears things like leading zeroes)
+            self.fuel_input.value = str(requested_amount)
 
     # Allow escape to unfocus fuel input and return to room list
     def on_key(self, event: events.Key) -> None:
@@ -270,10 +258,10 @@ class RoomDetail(Static):
                 self.app.set_focus(self.app.query_one(RoomsList))
             event.stop()
 
-    def update_room(self, room: Optional[dict], focus_input: bool = False) -> None:
+    def update_room(self, room: Optional[dict]) -> None:
         """Update the displayed room."""
         self.selected_room = room
-        self._sync_room_display(focus_input=focus_input)
+        self.refresh(recompose=True)
 
     def focus_fuel_input(self) -> None:
         if self.fuel_input is not None and not self.fuel_input.disabled and self.app is not None:
@@ -284,7 +272,6 @@ class RoomDetail(Static):
         if self.selected_room and self.selected_room['type'] == 'generator':
             if RoomManager.set_generator_fuel(self.selected_room, amount, self.state, self.data):
                 RoomManager.recalculate_facility_power(self.state, self.data)
-                self._sync_room_display()
                 self._refresh_power_display()
                 self._refresh_room_item()
 

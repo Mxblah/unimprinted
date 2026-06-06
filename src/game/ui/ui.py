@@ -66,16 +66,9 @@ class GameUI(App):
                 self.room_detail.update_room(selected)
 
     def on_list_view_selected(self, message: RoomsList.Selected) -> None:
-        """On select, focus the target room if applicable."""
-        rooms = self.state['facility']['rooms']
-        if message.list_view.index is not None and 0 <= message.list_view.index < len(rooms):
-            selected = rooms[message.list_view.index]
-
-            if self.room_detail:
-                self.room_detail.update_room(
-                    selected,
-                    focus_input=(selected['type'] == 'generator')
-                )
+        """On select, focus the target room's input field if applicable."""
+        if self.room_detail is not None:
+            self.room_detail.focus_fuel_input()
 
     def action_toggle_room(self) -> None:
         """Toggle selected room online/offline."""
