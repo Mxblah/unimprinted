@@ -3,7 +3,6 @@ from typing import Optional
 from textual.widgets import Static, ListView, ListItem, Label
 from src.game.state import GameState
 from src.game.helpers.rooms import RoomManager
-from src.game.ui.messages import RoomSelected
 
 log = logging.getLogger(__name__)
 
@@ -114,11 +113,6 @@ class RoomsList(ListView):
 
         label = item.query_one(Label)
         label.update(label_text)
-
-    def on_list_view_highlighted(self) -> None:
-        """Handle room navigation, post RoomSelected message."""
-        if self.index is not None:
-            self.post_message(RoomSelected(self.index))
 
     def get_selected_room(self) -> Optional[dict]:
         """Get the currently selected room."""
