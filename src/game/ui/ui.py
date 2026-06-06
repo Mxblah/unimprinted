@@ -17,7 +17,6 @@ class GameUI(App):
     # TODO: extract the start-of-day UI to a separate screen or mode, rather than being the whole app
     BINDINGS = [
         Binding("space", "toggle_room", "Toggle Room", show=False),
-        Binding("enter", "enter_room", "Enter Room", show=False),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -58,13 +57,25 @@ class GameUI(App):
         self.power_display.update(self.power_display.render())
 
     def on_list_view_highlighted(self, message: RoomsList.Highlighted) -> None:
-        """Handle room highlight message from RoomsList."""
+        """On highlight, render the newly selected room's details if present."""
         rooms = self.state['facility']['rooms']
         if message.list_view.index is not None and 0 <= message.list_view.index < len(rooms):
-            # Render the newly selected room's details if present
             selected = rooms[message.list_view.index]
+
             if self.room_detail:
                 self.room_detail.update_room(selected)
+
+    def on_list_view_selected(self, message: RoomsList.Selected) -> None:
+        """On select, focus the target room if applicable."""
+        rooms = self.state['facility']['rooms']
+        if message.list_view.index is not None and 0 <= message.list_view.index < len(rooms):
+            selected = rooms[message.list_view.index]
+
+            if self.room_detail:
+                self.room_detail.update_room(
+                    selected,
+                    focus_input=(selected['type'] == 'generator')
+                )
 
     def action_toggle_room(self) -> None:
         """Toggle selected room online/offline."""
@@ -87,13 +98,3 @@ class GameUI(App):
                 f"[red]Cannot toggle {selected['id']}: "
                 f"this room type is immutable[/red]"
             )
-
-    def action_enter_room(self) -> None:
-        """Handle enter on selected room (adjust fuel for generators, other actions later)."""
-        selected = self.rooms_list.get_selected_room() if self.rooms_list else None
-        if not selected:
-            return
-
-        if selected['type'] == 'generator':
-            # TODO
-            pass
