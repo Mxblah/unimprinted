@@ -1,9 +1,9 @@
 import logging
 from typing import Optional
-from textual.widgets import Static
-from textual.reactive import reactive
+from textual.widgets import Static, ListView, ListItem, Label
 from src.game.state import GameState
 from src.game.helpers.rooms import RoomManager
+from src.game.ui.messages import RoomSelected
 
 log = logging.getLogger(__name__)
 
@@ -46,10 +46,8 @@ class PowerDisplay(Static):
         return display
 
 
-class RoomsList(Static):
+class RoomsList(ListView):
     """Widget to display scrollable list of facility rooms."""
-
-    selected_index = reactive(0)
 
     def __init__(self, state: GameState):
         super().__init__()
@@ -57,67 +55,77 @@ class RoomsList(Static):
         self.state = state.state
         self.data = state.data
 
-    def render(self) -> str:
-        """Render the list of rooms."""
+    def _format_room_label(self, room: dict) -> tuple[str, str]:
+        """Return the label text and room type for a room entry."""
+        room_data = RoomManager.get_room_data(room, self.data)
+        is_online = room.get('online', True)
+
+        # Get room display info
+        display_name = room_data['display']['name']
+        room_type = room['type']
+
+        # Format power info based on room type
+        if room_type == 'generator':
+            power_gen = RoomManager.get_room_power_generation(room, self.data)
+            power_info = f"{power_gen:>4} pwr "
+        else:
+            power_draw = RoomManager.get_room_power_draw(
+                room,
+                self.state,
+                self.data
+            )
+            power_info = f"{power_draw:>4} draw"
+
+        # Build display text with status
+        status = " [reverse]OFF[/]" if not is_online else ""
+        dim_start = "[dim]" if not is_online else ""
+        dim_end = "[/dim]" if not is_online else ""
+        label_text = f"{dim_start}{display_name:<28} {power_info}{status}{dim_end}"
+        return label_text, room_type
+
+    def _build_room_item(self, idx: int, room: dict) -> ListItem:
+        """Construct a ListItem for a room entry."""
+        label_text, room_type = self._format_room_label(room)
+        return ListItem(
+            Label(label_text),
+            classes=f"room-item room-type-{room_type}",
+            id=f"room-item-{idx}"
+        )
+
+    def compose(self):
+        """Compose the list of room items."""
         rooms = self.state['facility']['rooms']
-        output = "ROOMS\n" + "─" * 39 + "\n"
-
         for idx, room in enumerate(rooms):
-            room_data = RoomManager.get_room_data(room, self.data)
-            is_selected = idx == self.selected_index
-            is_online = room.get('online', True)
+            yield self._build_room_item(idx, room)
 
-            # Get room display info
-            display_name = room_data['display']['name']
-            room_type = room['type']
-            color = ROOM_COLORS.get(room_type, "white")
+    def refresh_room_item(self, index: int) -> None:
+        """Refresh a specific room list item from the current state."""
+        rooms = self.state['facility']['rooms']
+        if index is None or not (0 <= index < len(rooms)):
+            return
 
-            # Format power info based on room type
-            if room_type == 'generator':
-                power_gen = RoomManager.get_room_power_generation(room, self.data)
-                power_info = f"{power_gen}  pwr"
-            else:
-                power_draw = RoomManager.get_room_power_draw(
-                    room,
-                    self.state,
-                    self.data
-                )
-                power_info = f"{power_draw} draw"
+        room = rooms[index]
+        label_text, room_type = self._format_room_label(room)
 
-            # Styling
-            prefix = "► " if is_selected else "  "
-            dim = "[dim]" if not is_online else ""
-            end_dim = "[/dim]" if not is_online else ""
-            status = "(OFF)" if not is_online else ""
+        # Get the list item by its index, then update its label with the new text
+        item = self.children[index]
+        if item is None:
+            return
 
-            line = f"{prefix}{dim}[{color}]{display_name:<28}[/{color}] {power_info:>8} {status}{end_dim}\n"
-            output += line
+        label = item.query_one(Label)
+        label.update(label_text)
 
-        return output
+    def on_list_view_highlighted(self) -> None:
+        """Handle room navigation, post RoomSelected message."""
+        if self.index is not None:
+            self.post_message(RoomSelected(self.index))
 
     def get_selected_room(self) -> Optional[dict]:
         """Get the currently selected room."""
         rooms = self.state['facility']['rooms']
-        if 0 <= self.selected_index < len(rooms):
-            return rooms[self.selected_index]
+        if self.index is not None and 0 <= self.index < len(rooms):
+            return rooms[self.index]
         return None
-
-    def select_room(self, index: int, room_detail: RoomDetail) -> None:
-        """Selects a specific room via an index"""
-
-        max_idx = len(self.state['facility']['rooms']) - 1
-        if index > max_idx:
-            self.selected_index = 0  # wraparound to the start
-        elif index < 0:
-            self.selected_index = max_idx  # wraparound to the end
-        else:
-            self.selected_index = index  # valid, inside the list bounds
-
-        # Update detail pane and list
-        selected = self.get_selected_room()
-        if selected and room_detail:
-            room_detail.update_room(selected)
-        self.update(self.render())
 
 
 class RoomDetail(Static):

@@ -6,6 +6,7 @@ from src.game.state import GameState
 from src.game.facility import Facility
 from src.game.ui.widgets import PowerDisplay, RoomsList, RoomDetail
 from src.game.helpers.rooms import RoomManager
+from src.game.ui.messages import RoomSelected, FuelAdjusted
 
 log = logging.getLogger(__name__)
 
@@ -16,8 +17,6 @@ class GameUI(App):
 
     # TODO: extract the start-of-day UI to a separate screen or mode, rather than being the whole app
     BINDINGS = [
-        Binding("up", "select_room_up", "Up", show=False),
-        Binding("down", "select_room_down", "Down", show=False),
         Binding("space", "toggle_room", "Toggle Room", show=False),
         Binding("enter", "enter_room", "Enter Room", show=False),
         Binding("q", "quit", "Quit"),
@@ -59,13 +58,23 @@ class GameUI(App):
                 self.room_detail.update_room(first_room)
         self.power_display.update(self.power_display.render())
 
-    def action_select_room_up(self) -> None:
-        """Move selection up in the rooms list."""
-        self.rooms_list.select_room(self.rooms_list.selected_index - 1, self.room_detail)
+    def on_room_selected(self, message: RoomSelected) -> None:
+        """Handle room selection message from RoomsList."""
+        rooms = self.state['facility']['rooms']
+        if 0 <= message.room_index < len(rooms):
+            selected = rooms[message.room_index]
+            if self.room_detail:
+                self.room_detail.update_room(selected)
 
-    def action_select_room_down(self) -> None:
-        """Move selection down in the rooms list."""
-        self.rooms_list.select_room(self.rooms_list.selected_index + 1, self.room_detail)
+    def on_fuel_adjusted(self, message: FuelAdjusted) -> None:
+        """Handle fuel adjustment message from RoomDetail."""
+        # Recalculate power since fuel affects generation
+        RoomManager.recalculate_facility_power(self.state, self.data)
+        # Refresh displays
+        self.power_display.update(self.power_display.render())
+        # Update the room detail to show new power output
+        if self.room_detail and self.room_detail.selected_room:
+            self.room_detail.update(self.room_detail.render())
 
     def action_toggle_room(self) -> None:
         """Toggle selected room online/offline."""
@@ -78,7 +87,8 @@ class GameUI(App):
             RoomManager.recalculate_facility_power(self.state, self.data)
 
             # Update displays
-            self.rooms_list.update(self.rooms_list.render())
+            if self.rooms_list and self.rooms_list.index is not None:
+                self.rooms_list.refresh_room_item(self.rooms_list.index)
             self.room_detail.update_room(selected)
             self.power_display.update(self.power_display.render())
         else:

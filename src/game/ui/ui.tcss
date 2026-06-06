@@ -22,3 +22,27 @@ Screen {
     height: auto;
     border: solid $accent;
 }
+
+/* Room list styling */
+.room-item {
+    width: 100%;
+    height: auto;
+    padding: 0 1;
+}
+
+.room-item:focus {
+    background: $panel;
+}
+
+/* Room type colors */
+.room-type-base {
+    color: slategrey;
+}
+
+.room-type-generator {
+    color: firebrick;
+}
+
+.room-type-crafting {
+    color: gold;
+}
