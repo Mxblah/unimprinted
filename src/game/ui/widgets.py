@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from textual import events
+from textual.containers import Horizontal
 from textual.validation import Integer
 from textual.widgets import Static, ListView, ListItem, Label, Input
 from textual.message import Message
@@ -153,27 +154,50 @@ class RoomDetail(Static):
                 log.warning("RefreshItem created with refresh_room but no state provided; room index will not be set.")
 
     def compose(self):
-        # All rooms show the detail body
-        self.detail_body = Static(self._format_room_text(), id="room_detail_body")
-        yield self.detail_body
+        if not self.selected_room:
+            yield Static("(Select a room for additional details)", id="room_detail_placeholder")
+            return
 
-        # If we're a generator, show the fuel input field
-        if self.selected_room and self.selected_room['type'] == 'generator':
+        # Shared room details at the top
+        self.detail_body_top = Static(self._format_room_text(), id="room_detail_body_top")
+        yield self.detail_body_top
+
+        if self.selected_room['type'] == 'generator':
             room_generator = RoomManager.get_room_data(self.selected_room, self.data, 'generator')
             max_fuel = room_generator['consumes']['max_amount']
             current_fuel = self.selected_room.get('fuel_amount', 0)
 
-            # todo: this field is kinda ugly; see about prettying it up with CSS or something
-            self.fuel_input = Input(
-                placeholder=f"(0..{max_fuel})",
-                id="fuel_input",
-                disabled=False,
-                value=str(current_fuel),
-                validators=[
-                    Integer(minimum=0, maximum=max_fuel)
-                ]
-            )
-            yield self.fuel_input
+            # Generator header
+            yield Static("[bold]Generator:[/bold]\n  Fuel Type: " + room_generator['consumes']['id'], id="generator_header")
+
+            # Horizontal row for current fuel with inline input
+            with Horizontal(classes="generator-fuel-row"):
+                yield Static("  Current Fuel:", classes="gen-fuel-prefix")
+                self.fuel_input = Input(
+                    placeholder=f"0..{max_fuel}",
+                    id="fuel_input_inline",
+                    disabled=False,
+                    value=str(current_fuel),
+                    classes="inline-input",
+                    validators=[
+                        Integer(minimum=0, maximum=max_fuel)
+                    ],
+                    compact=True,
+                )
+                yield self.fuel_input
+                yield Static(f"/ {max_fuel}", classes="gen-fuel-suffix")
+
+            # Power output and hint
+            base_power = room_generator['generates']['base']
+            per_fuel = room_generator['generates']['per_fuel']
+            total_output = base_power + (current_fuel * per_fuel)
+            yield Static(f"  Power Output: {total_output}\n\n[dim]Press TAB to adjust fuel[/dim]", id="generator_footer")
+
+        # Toggle/footer info
+        if RoomManager.is_toggleable(self.selected_room['type']):
+            yield Static("[dim]Press SPACE to toggle online/offline[/dim]", id="room_detail_footer")
+        else:
+            yield Static("[red]This room cannot be toggled[/red]", id="room_detail_footer")
 
     def _format_room_text(self) -> str:
         """Provide the formatted text to display for the currently selected room."""
@@ -219,28 +243,6 @@ class RoomDetail(Static):
             self.data
         )
         output += f"\n  [bold]Total: {total_draw}[/bold]\n"
-
-        # Generator-specific info
-        if room_type == 'generator':
-            gen = room_data['generator']
-            fuel_type = gen['consumes']['id']
-            max_fuel = gen['consumes']['max_amount']
-            current_fuel = self.selected_room.get('fuel_amount', 0)
-            base_power = gen['generates']['base']
-            per_fuel = gen['generates']['per_fuel']
-            total_output = base_power + (current_fuel * per_fuel)
-
-            output += "\n[bold]Generator:[/bold]\n"
-            output += f"  Fuel Type: {fuel_type}\n"
-            output += f"  Current Fuel: {current_fuel} / {max_fuel}\n"
-            output += f"  Power Output: {total_output}\n"
-            output += "\n[dim]Press TAB to adjust fuel[/dim]"
-
-        # Common toggle info
-        if RoomManager.is_toggleable(room_type):
-            output += "\n[dim]Press SPACE to toggle online/offline[/dim]\n"
-        else:
-            output += "\n[red]This room cannot be toggled[/red]\n"
 
         return output
 
@@ -289,3 +291,12 @@ class RoomDetail(Static):
             if RoomManager.set_generator_fuel(self.selected_room, amount, self.state, self.data):
                 RoomManager.recalculate_facility_power(self.state, self.data)
                 self.post_message(self.RefreshItem(refresh_power=True, refresh_room=self.selected_room, state=self.state))
+
+                # Also update the generator footer with the new power output
+                try:
+                    footer = self.query_one("#generator_footer", Static)
+                except Exception:
+                    footer = None
+                if footer is not None:
+                    total_output = RoomManager.get_room_power_generation(self.selected_room, self.data)
+                    footer.update(f"  Power Output: {total_output}\n\n[dim]Press TAB to adjust fuel[/dim]")
