@@ -70,6 +70,13 @@ class GameUI(App):
         if self.room_detail is not None:
             self.room_detail.focus_fuel_input()
 
+    def on_room_detail_refresh_item(self, message: RoomDetail.RefreshItem) -> None:
+        """Handle RefreshItem messages from RoomDetail to update the UI after state changes."""
+        if message.refresh_power and self.power_display:
+            self.power_display.update(self.power_display.render())
+        if message.room_index is not None and self.rooms_list:
+            self.rooms_list.refresh_room_item(message.room_index)
+
     def action_toggle_room(self) -> None:
         """Toggle selected room online/offline."""
         selected = self.rooms_list.get_selected_room() if self.rooms_list else None

@@ -3,6 +3,7 @@ from typing import Optional
 from textual import events
 from textual.validation import Integer
 from textual.widgets import Static, ListView, ListItem, Label, Input
+from textual.message import Message
 from src.game.state import GameState
 from src.game.helpers.rooms import RoomManager
 
@@ -41,9 +42,8 @@ class PowerDisplay(Static):
 │ POWER STATUS{' ' * 65}│
 │ Generated: {total_gen:>4}  │  Available: [{status_color}]{available:>4}[/{status_color}]  │  Locked: {locked:>4}{' ' * 25}│
 │{' ' * 78}│
-│ [Press SPACE to toggle rooms | ENTER on generators to adjust fuel]{' ' * 11}│
 └{'─' * 78}┘"""
-        # TODO: move the control explanation elsewhere; replace with the start day button
+        # TODO: add the start day button
         return display
 
 
@@ -136,6 +136,22 @@ class RoomDetail(Static):
         self.detail_body: Optional[Static] = None
         self.fuel_input: Optional[Input] = None
 
+    class RefreshItem(Message):
+        """Message to refresh various parts of the UI after state changes."""
+
+        def __init__(self, refresh_power: bool = False, refresh_room: Optional[dict] = None, state: Optional[dict] = None):
+            super().__init__()
+            self.refresh_power = refresh_power
+            self.room_index = None
+
+            if refresh_room and state:
+                try:
+                    self.room_index = state['facility']['rooms'].index(refresh_room)
+                except ValueError:
+                    log.warning(f"RefreshItem created with refresh_room but room id '{refresh_room.get('id', '<unknown>')}' not found in state; room index will not be set.")
+            elif refresh_room:
+                log.warning("RefreshItem created with refresh_room but no state provided; room index will not be set.")
+
     def compose(self):
         # All rooms show the detail body
         self.detail_body = Static(self._format_room_text(), id="room_detail_body")
@@ -218,7 +234,7 @@ class RoomDetail(Static):
             output += f"  Fuel Type: {fuel_type}\n"
             output += f"  Current Fuel: {current_fuel} / {max_fuel}\n"
             output += f"  Power Output: {total_output}\n"
-            output += "\n[dim]Press ENTER to adjust fuel[/dim]"
+            output += "\n[dim]Press TAB to adjust fuel[/dim]"
 
         # Common toggle info
         if RoomManager.is_toggleable(room_type):
@@ -272,25 +288,4 @@ class RoomDetail(Static):
         if self.selected_room and self.selected_room['type'] == 'generator':
             if RoomManager.set_generator_fuel(self.selected_room, amount, self.state, self.data):
                 RoomManager.recalculate_facility_power(self.state, self.data)
-                self._refresh_power_display()
-                self._refresh_room_item()
-
-    # todo: this needs to be a Message instead
-    def _refresh_power_display(self) -> None:
-        if self.app is None:
-            return
-        power_display = self.app.query_one(PowerDisplay)
-        power_display.update(power_display.render())
-
-    # todo: this too
-    def _refresh_room_item(self) -> None:
-        if self.app is None or self.selected_room is None:
-            return
-        rooms = self.state['facility']['rooms']
-        try:
-            room_index = rooms.index(self.selected_room)
-        except ValueError:
-            return
-
-        room_list = self.app.query_one(RoomsList)
-        room_list.refresh_room_item(room_index)
+                self.post_message(self.RefreshItem(refresh_power=True, refresh_room=self.selected_room, state=self.state))
