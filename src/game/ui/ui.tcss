@@ -23,6 +23,28 @@ Screen {
     border: solid $accent;
 }
 
+/* General styling */
+.auto-width {
+    width: auto;
+}
+
+.auto-height {
+    height: auto;
+}
+
+.auto-size {
+    width: auto;
+    height: auto;
+}
+
+/* Input styling */
+
+.inline-input {
+    background: $background;
+    color: $text;
+    width: auto;
+}
+
 /* Room list styling */
 .room-item {
     width: 100%;
@@ -45,40 +67,4 @@ Screen {
 
 .room-type-crafting {
     color: gold;
-}
-
-/* Inline fuel input styling */
-#fuel_input_inline, .inline-input {
-    background: $panel;
-    color: $text;
-    width: auto;
-    padding: 0 1 0 1;
-}
-
-.generator-fuel-row {
-    padding: 0;
-    height: auto;
-    align: left top;
-    color: $text;
-}
-
-.gen-fuel-prefix,
-.gen-fuel-suffix {
-    color: $text;
-    background: transparent;
-}
-
-.gen-fuel-prefix {
-    width: auto;
-    padding-right: 1;
-}
-
-.gen-fuel-suffix {
-    width: auto;
-    padding-left: 1;
-}
-
-#generator_footer {
-    color: $text;
-    height: auto;
 }

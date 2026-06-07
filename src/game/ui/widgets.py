@@ -171,8 +171,8 @@ class RoomDetail(Static):
             yield Static("[bold]Generator:[/bold]\n  Fuel Type: " + room_generator['consumes']['id'], id="generator_header")
 
             # Horizontal row for current fuel with inline input
-            with Horizontal(classes="generator-fuel-row"):
-                yield Static("  Current Fuel:", classes="gen-fuel-prefix")
+            with Horizontal(classes="auto-size"):
+                yield Static("  Current Fuel: ", classes="auto-size")
                 self.fuel_input = Input(
                     placeholder=f"0..{max_fuel}",
                     id="fuel_input_inline",
@@ -185,12 +185,10 @@ class RoomDetail(Static):
                     compact=True,
                 )
                 yield self.fuel_input
-                yield Static(f"/ {max_fuel}", classes="gen-fuel-suffix")
+                yield Static(f" / {max_fuel}", classes="auto-size")
 
             # Power output and hint
-            base_power = room_generator['generates']['base']
-            per_fuel = room_generator['generates']['per_fuel']
-            total_output = base_power + (current_fuel * per_fuel)
+            total_output = RoomManager.get_room_power_generation(room_generator, self.data)
             yield Static(f"  Power Output: {total_output}\n\n[dim]Press TAB to adjust fuel[/dim]", id="generator_footer")
 
         # Toggle/footer info
